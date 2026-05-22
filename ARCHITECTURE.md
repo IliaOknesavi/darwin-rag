@@ -173,5 +173,4 @@ Telegram **не рендерит markdown-таблицы** (`| col | col |`). Р
 - **Эксплуатация бота**: на Sonnet ~$0.004 за один диалог из 6 tool-вызовов
   (модель + кэш).
 - **Self-host**: всё, кроме LLM, работает локально (SQLite + Chroma +
-  Hugging Face модель). Из платного — только Anthropic API (или
-  подписка Claude Code через openclaw-proxy).
+  Hugging Face модель). Из платного — только Anthropic API.
