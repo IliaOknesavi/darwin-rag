@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Все чаты — darwin_rag{% endblock %}
+{% block subtitle %}{{ chats|length }} чатов · {{ backend }}{% endblock %}
+{% block content %}
+
+{% if not chats %}
+  <div class="empty">
+    <p>Чатов пока нет.</p>
+    <p class="muted">Бот будет писать сюда каждое сообщение, как только клиенты начнут общение.</p>
+    <p class="muted">База: <code>{{ db_path }}</code></p>
+  </div>
+{% else %}
+  <table class="chats">
+    <thead>
+      <tr>
+        <th>Чат</th>
+        <th class="num">Сообщений</th>
+        <th>Последнее сообщение</th>
+        <th class="num">Когда</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in chats %}
+      <tr onclick="window.location='/chat/{{ c.chat_id }}'" class="row-clickable {% if c.is_banned %}row-banned{% endif %}">
+        <td>
+          <div class="user-name">
+            {% if c.is_banned %}<span class="badge banned">⛔</span>{% endif %}
+            {% if c.is_whitelisted %}<span class="badge">✓</span>{% endif %}
+            {% if c.first_name %}{{ c.first_name }}{% else %}—{% endif %}
+            {% if c.username %}<span class="muted">@{{ c.username }}</span>{% endif %}
+          </div>
+          <div class="chat-id">id <code>{{ c.chat_id }}</code></div>
+        </td>
+        <td class="num">{{ c.message_count }}</td>
+        <td class="preview">{{ c.last_message_preview }}</td>
+        <td class="num muted">{{ c.last_message_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% endblock %}

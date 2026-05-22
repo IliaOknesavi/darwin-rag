@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Баны — darwin_rag{% endblock %}
+{% block subtitle %}{{ bans|length }} активных{% endblock %}
+{% block content %}
+
+{% if not bans %}
+  <div class="empty">
+    <p>Никто не забанен. Хорошие у вас клиенты 🙂</p>
+    <p class="muted">Чтобы забанить — откройте чат в <a href="/">списке</a> и нажмите «Забанить».</p>
+  </div>
+{% else %}
+  <table class="chats">
+    <thead>
+      <tr>
+        <th>Пользователь</th>
+        <th>Причина</th>
+        <th class="num">Забанен</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bans %}
+      <tr>
+        <td>
+          <div class="user-name">
+            <span class="badge banned">⛔</span>
+            {% if b.first_name %}{{ b.first_name }}{% else %}—{% endif %}
+            {% if b.username %}<span class="muted">@{{ b.username }}</span>{% endif %}
+          </div>
+          <div class="chat-id">chat_id <code>{{ b.chat_id }}</code>{% if b.user_id %} · user_id <code>{{ b.user_id }}</code>{% endif %}</div>
+        </td>
+        <td>{{ b.reason or '—' }}</td>
+        <td class="num muted">{{ b.banned_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td class="num">
+          <form method="post" action="/chat/{{ b.chat_id }}/unban" class="inline-form">
+            <button type="submit" class="btn btn-unban">Разбанить</button>
+          </form>
+          <a href="/chat/{{ b.chat_id }}" class="muted" style="margin-left:8px">открыть чат →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% endblock %}

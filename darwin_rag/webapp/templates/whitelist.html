@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Whitelist — darwin_rag{% endblock %}
+{% block subtitle %}
+  {{ entries|length }} в списке ·
+  режим: <b>{% if enabled %}включён{% else %}выключен{% endif %}</b>
+{% endblock %}
+{% block content %}
+
+<div class="chat-header">
+  <a href="/" class="back">← К списку чатов</a>
+  <div class="actions">
+    <form method="post" action="/whitelist/toggle" class="inline-form"
+          onsubmit="return confirm('{% if enabled %}Выключить{% else %}Включить{% endif %} режим whitelist?');">
+      <button type="submit" class="btn {% if enabled %}btn-unban{% else %}btn-ban{% endif %}">
+        {% if enabled %}Выключить режим{% else %}Включить режим{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<p class="muted">
+  Когда режим <b>включён</b> — бот отвечает только тем, кто в списке.
+  Остальные получают сообщение «закрытая бета». Удобно для демо клиенту,
+  бета-тестов и защиты от случайных пользователей.
+</p>
+
+<h3>Добавить вручную</h3>
+<form method="post" action="/whitelist/add" class="inline-form" style="margin-bottom:24px">
+  <input type="number" name="chat_id" placeholder="chat_id (Telegram)" required>
+  <input type="text" name="username" placeholder="@username (необязательно)" maxlength="64">
+  <input type="text" name="note" placeholder="Заметка (например, «клиент X, демо»)" maxlength="200" style="min-width:280px">
+  <button type="submit" class="btn">Добавить</button>
+</form>
+
+{% if not entries %}
+  <div class="empty">
+    <p>Whitelist пуст.</p>
+    <p class="muted">Добавьте chat_id вручную или нажмите «+ в whitelist» на странице чата.</p>
+  </div>
+{% else %}
+  <table class="chats">
+    <thead>
+      <tr>
+        <th>Пользователь</th>
+        <th>Заметка</th>
+        <th class="num">Добавлен</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>
+          <div class="user-name">
+            <span class="badge">✓</span>
+            {% if e.first_name %}{{ e.first_name }}{% else %}—{% endif %}
+            {% if e.username %}<span class="muted">@{{ e.username }}</span>{% endif %}
+          </div>
+          <div class="chat-id">chat_id <code>{{ e.chat_id }}</code></div>
+        </td>
+        <td>{{ e.note or '—' }}</td>
+        <td class="num muted">{{ e.added_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td class="num">
+          <form method="post" action="/whitelist/{{ e.chat_id }}/remove" class="inline-form"
+                onsubmit="return confirm('Убрать из whitelist?');">
+            <button type="submit" class="btn btn-unban">Убрать</button>
+          </form>
+          <a href="/chat/{{ e.chat_id }}" class="muted" style="margin-left:8px">открыть чат →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% endblock %}

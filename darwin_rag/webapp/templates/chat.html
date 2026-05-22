@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Чат {{ chat_id }} — darwin_rag{% endblock %}
+{% block subtitle %}
+  {% if user and user.first_name %}{{ user.first_name }}{% endif %}
+  {% if user and user.username %}@{{ user.username }}{% endif %}
+  · id <code>{{ chat_id }}</code> · {{ messages|length }} сообщений
+{% endblock %}
+{% block content %}
+
+<div class="chat-header">
+  <a href="/" class="back">← К списку</a>
+  <div class="actions">
+    {% if is_banned %}
+      <span class="badge banned">⛔ Забанен</span>
+      <form method="post" action="/chat/{{ chat_id }}/unban" class="inline-form">
+        <button type="submit" class="btn btn-unban">Разбанить</button>
+      </form>
+    {% else %}
+      <form method="post" action="/chat/{{ chat_id }}/ban"
+            onsubmit="return confirm('Забанить этого клиента? Бот перестанет ему отвечать.')"
+            class="inline-form ban-form">
+        <input type="text" name="reason" placeholder="Причина (необязательно)" maxlength="200">
+        <button type="submit" class="btn btn-ban">Забанить</button>
+      </form>
+    {% endif %}
+    {% if is_whitelisted %}
+      <span class="badge">✓ В whitelist</span>
+      <form method="post" action="/chat/{{ chat_id }}/whitelist-remove" class="inline-form">
+        <button type="submit" class="btn btn-unban">Убрать из whitelist</button>
+      </form>
+    {% else %}
+      <form method="post" action="/chat/{{ chat_id }}/whitelist-add" class="inline-form">
+        <input type="text" name="note" placeholder="Заметка (необязательно)" maxlength="200">
+        <button type="submit" class="btn">+ В whitelist</button>
+      </form>
+    {% endif %}
+    <form method="post" action="/chat/{{ chat_id }}/delete" onsubmit="return confirm('Удалить всю историю чата?')" class="inline-form">
+      <button type="submit" class="btn btn-delete">Удалить</button>
+    </form>
+  </div>
+</div>
+
+<div class="chat">
+  {% for m in messages %}
+  <div class="msg msg-{{ m.role }}">
+    <div class="meta">
+      <span class="role">{% if m.role == 'user' %}клиент{% else %}бот{% endif %}</span>
+      <span class="time muted">{{ m.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+    </div>
+    <div class="body">{{ m.text|safe }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
