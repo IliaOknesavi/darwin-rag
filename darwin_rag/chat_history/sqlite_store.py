@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .base import ChatHistoryStore
-from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry
+from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry, Takeover
 
 
 SCHEMA_SQL = """
@@ -49,6 +49,13 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT
 );
 INSERT OR IGNORE INTO settings(key, value) VALUES ('whitelist_enabled', '0');
+
+-- См. docs/proposals/operator-takeover.md
+CREATE TABLE IF NOT EXISTS takeovers (
+    chat_id     INTEGER PRIMARY KEY,
+    operator    TEXT,
+    started_at  TEXT NOT NULL
+);
 """
 
 
@@ -302,3 +309,54 @@ class SqliteChatStore(ChatHistoryStore):
     async def set_whitelist_enabled(self, on: bool) -> None:
         async with self._lock:
             await asyncio.to_thread(self._set_whitelist_enabled_sync, on)
+
+    # ── operator takeover ───────────────────────────────
+
+    def _takeover_sync(self, chat_id, operator, ts: str) -> None:
+        with self._conn() as c:
+            c.execute(
+                """INSERT INTO takeovers (chat_id, operator, started_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(chat_id) DO UPDATE SET
+                       operator   = COALESCE(excluded.operator, takeovers.operator),
+                       started_at = excluded.started_at""",
+                (chat_id, operator, ts),
+            )
+
+    async def take_over(self, chat_id, operator=None) -> Takeover:
+        now = datetime.now(timezone.utc)
+        async with self._lock:
+            await asyncio.to_thread(self._takeover_sync, chat_id, operator, now.isoformat())
+        return Takeover(chat_id=chat_id, operator=operator, started_at=now)
+
+    def _release_sync(self, chat_id: int) -> int:
+        with self._conn() as c:
+            cur = c.execute("DELETE FROM takeovers WHERE chat_id = ?", (chat_id,))
+            return cur.rowcount
+
+    async def release(self, chat_id: int) -> bool:
+        async with self._lock:
+            n = await asyncio.to_thread(self._release_sync, chat_id)
+        return n > 0
+
+    def _is_taken_over_sync(self, chat_id: int) -> bool:
+        with self._conn() as c:
+            r = c.execute("SELECT 1 FROM takeovers WHERE chat_id = ?", (chat_id,)).fetchone()
+        return r is not None
+
+    async def is_taken_over(self, chat_id: int) -> bool:
+        return await asyncio.to_thread(self._is_taken_over_sync, chat_id)
+
+    def _list_takeovers_sync(self) -> list[Takeover]:
+        with self._conn() as c:
+            rows = c.execute(
+                "SELECT chat_id, operator, started_at FROM takeovers ORDER BY started_at DESC"
+            ).fetchall()
+        return [
+            Takeover(chat_id=r["chat_id"], operator=r["operator"],
+                     started_at=datetime.fromisoformat(r["started_at"]))
+            for r in rows
+        ]
+
+    async def list_takeovers(self) -> list[Takeover]:
+        return await asyncio.to_thread(self._list_takeovers_sync)
