@@ -27,6 +27,7 @@ class ChatSummary(BaseModel):
     last_message_preview: str
     is_banned: bool = False
     is_whitelisted: bool = False
+    is_taken_over: bool = False
 
 
 class Ban(BaseModel):
@@ -48,3 +49,14 @@ class WhitelistEntry(BaseModel):
     first_name: str | None = None
     note: str | None = None
     added_at: datetime
+
+
+class Takeover(BaseModel):
+    """Чат, который сейчас ведёт оператор вручную (бот молчит).
+
+    См. docs/proposals/operator-takeover.md.
+    """
+
+    chat_id: int
+    operator: str | None = None
+    started_at: datetime

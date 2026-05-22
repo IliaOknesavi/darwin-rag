@@ -6,7 +6,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
-from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry
+from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry, Takeover
 
 
 class ChatHistoryStore(ABC):
@@ -86,3 +86,23 @@ class ChatHistoryStore(ABC):
     @abstractmethod
     async def set_whitelist_enabled(self, on: bool) -> None:
         """Включить/выключить режим whitelist."""
+
+    # ── operator takeover ──────────────────────────────
+    # Sticky-режим: оператор берёт чат вручную, бот молчит до release.
+    # См. docs/proposals/operator-takeover.md.
+
+    @abstractmethod
+    async def take_over(self, chat_id: int, operator: str | None = None) -> Takeover:
+        """Перевести чат в ручной режим. Идемпотентно."""
+
+    @abstractmethod
+    async def release(self, chat_id: int) -> bool:
+        """Отпустить чат боту. True если takeover был."""
+
+    @abstractmethod
+    async def is_taken_over(self, chat_id: int) -> bool:
+        """Быстрая проверка для middleware."""
+
+    @abstractmethod
+    async def list_takeovers(self) -> list[Takeover]:
+        """Все активные takeover, новейшие первыми."""

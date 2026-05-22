@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from collections import defaultdict
 
 from .base import ChatHistoryStore
-from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry
+from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry, Takeover
 
 
 class MemoryChatStore(ChatHistoryStore):
@@ -17,6 +17,7 @@ class MemoryChatStore(ChatHistoryStore):
         self._bans: dict[int, Ban] = {}
         self._whitelist: dict[int, WhitelistEntry] = {}
         self._whitelist_enabled: bool = False
+        self._takeovers: dict[int, Takeover] = {}
 
     async def append(self, msg: ChatMessage) -> int:
         msg_id = next(self._id_seq)
@@ -102,3 +103,19 @@ class MemoryChatStore(ChatHistoryStore):
 
     async def set_whitelist_enabled(self, on: bool) -> None:
         self._whitelist_enabled = bool(on)
+
+    # ── operator takeover ──────────────────────────────
+    async def take_over(self, chat_id, operator=None) -> Takeover:
+        t = Takeover(chat_id=chat_id, operator=operator,
+                     started_at=datetime.now(timezone.utc))
+        self._takeovers[chat_id] = t
+        return t
+
+    async def release(self, chat_id: int) -> bool:
+        return self._takeovers.pop(chat_id, None) is not None
+
+    async def is_taken_over(self, chat_id: int) -> bool:
+        return chat_id in self._takeovers
+
+    async def list_takeovers(self) -> list[Takeover]:
+        return sorted(self._takeovers.values(), key=lambda t: t.started_at, reverse=True)

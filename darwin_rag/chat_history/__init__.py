@@ -10,11 +10,12 @@
     CHAT_HISTORY_BACKEND=none            — вообще не сохраняем
 """
 from .base import ChatHistoryStore
-from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry
+from .schemas import ChatMessage, ChatSummary, Ban, WhitelistEntry, Takeover
 from .memory import MemoryChatStore
 from .sqlite_store import SqliteChatStore
 
 __all__ = [
-    "ChatHistoryStore", "ChatMessage", "ChatSummary", "Ban", "WhitelistEntry",
+    "ChatHistoryStore", "ChatMessage", "ChatSummary",
+    "Ban", "WhitelistEntry", "Takeover",
     "MemoryChatStore", "SqliteChatStore",
 ]
