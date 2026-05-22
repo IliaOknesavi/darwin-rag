@@ -1,0 +1,21 @@
+#!/bin/bash
+# Wrapper над claude CLI для openclaw-proxy.
+#
+# Назначение: ВСЕГДА запрещать нативные tools (Bash/Write/Edit/Read/...)
+# через --disallowedTools, оставляя только SDK function-calling.
+#
+# Claude CLI поддерживает несколько --disallowedTools — они мерджатся.
+# Поэтому даже если openclaw сам добавляет свой список, наш «опасный»
+# набор тоже применится.
+#
+# Использование: добавить эту директорию в PATH ПЕРЕД /opt/homebrew/bin/
+# при запуске openclaw-proxy:
+#
+#   PATH=/Users/hatiko/PycharmProjects/PythonLab5/darwin_rag/bin:$PATH claude-proxy
+
+DANGEROUS_TOOLS="Bash,BashOutput,KillBash,Write,Edit,MultiEdit,NotebookEdit,Read,WebFetch,WebSearch,Task,Agent,SlashCommand,ExitPlanMode,TodoWrite,Glob,Grep"
+
+# Реальный claude — вызываем напрямую через node, чтобы wrapper не вызвал сам себя
+REAL_CLAUDE="/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe"
+
+exec "$REAL_CLAUDE" --disallowedTools "$DANGEROUS_TOOLS" "$@"
