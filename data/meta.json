@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-05-21T06:45:34.058770Z",
+  "finished_at": "2026-05-21T06:46:29.960466Z",
+  "parser_version": "0.1.0",
+  "sitemap_url": "https://darwinshop.ru/sitemap.xml",
+  "total_urls": 29,
+  "fetched": 29,
+  "parsed_ok": 29,
+  "failed": 0,
+  "failures": []
+}
