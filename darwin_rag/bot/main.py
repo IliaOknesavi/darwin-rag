@@ -71,6 +71,18 @@ async def main():
     handlers.register_middlewares(handlers.router)
     dp.include_router(handlers.router)
 
+    # Прогрев embedding-модели, чтобы первый search_dossiers не висел
+    # на ~30 сек загрузки multilingual-e5-large.
+    try:
+        from .. import rag as _rag_pkg  # noqa: F401
+        from ..rag.retriever import Retriever
+        log.info("Прогрев embedding-модели…")
+        r = Retriever()
+        r.search("ping", top_k=1)
+        log.info("Embedder готов.")
+    except Exception as e:
+        log.warning(f"Не удалось прогреть embedder (некритично): {e}")
+
     me = await bot.get_me()
     log.info(f"Бот запущен: @{me.username} ({me.full_name})")
     log.info("Polling...")
